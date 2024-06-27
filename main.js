@@ -1,27 +1,16 @@
-const { getAllEmails, readEmail , authorize, sendEmail } = require("./emailServices/gmailAPI");
+const { getAllEmails, readEmail , authorize, sendEmail, getEmailsReceivedLast15Minutes } = require("./emailServices/gmailAPI");
 const { getLabelFunction, getReplyFunction } = require("./AI-service/geminiAPI");
 
 async function main() {
-    const auth = await authorize();
-  
-    const messageId = '19059263ca321626';
-
-    const email = await readEmail(auth, messageId);
-    const content = email.body;
-
-    const label =  await getLabelFunction(content);
-    console.log(label);
-    const replyMail = await getReplyFunction(label,content)
-
-    console.log(replyMail);
-
-    const replyResponse = await sendEmail(auth, {
-      to: 'amitvermax7390@gmail.com',
-      subject: 'Hello',
-      text: replyMail
-    }
+ 
+    const replyResponse = await sendEmail(auth,
+      `To: ${recipentEmail}\r\n` +
+      `Subject: Re: ${subject}\r\n` +
+      `Content-Type: text/plain; charset=utf-8\r\n` +
+      `\r\n` +
+      `${replyMail}`
     );
-    console.log(replyResponse);
+    
   }
   
   main().catch(console.error);

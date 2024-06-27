@@ -131,14 +131,14 @@ async function setLabels(auth, messageId, labelsToAdd, labelsToRemove) {
   }
 
 
-  async function getAllEmails(auth) {
+async function getAllEmails(auth) {
     const gmail = google.gmail({ version: 'v1', auth });
     let emails = [];
     let nextPageToken = null;
 
       const res = await gmail.users.messages.list({
         userId: 'me',
-        maxResults: 50, 
+        maxResults: 20, 
         pageToken: nextPageToken,
       });
 
@@ -150,43 +150,54 @@ async function setLabels(auth, messageId, labelsToAdd, labelsToRemove) {
     return emails
   }
 
+  // const { google } = require('googleapis');
 
   async function readEmail(auth, messageId) {
     const gmail = google.gmail({ version: 'v1', auth });
   
-    const res = await gmail.users.messages.get({
-      userId: 'me',
-      id: messageId,
-      
-    });
-
-    const emailData = res.data;
-    const headers = emailData.payload.headers;
-    let body = '';
+    try {
+      const res = await gmail.users.messages.get({
+        userId: 'me',
+        id: messageId,
+      });
   
-    // Extracting the email body from the payload parts
-    if (emailData.payload.parts) {
-      for (const part of emailData.payload.parts) { 
-        if (part.mimeType === 'text/plain' && part.body.data) {
+      const emailData = res.data;
+      const headers = emailData.payload.headers;
+      let body = '';
+  
+      // Extracting the email body from the payload parts
+      if (emailData.payload.parts) {
+        for (const part of emailData.payload.parts) {
+          if (part.mimeType === 'text/plain' && part.body.data) {
             body = Buffer.from(part.body.data, 'base64').toString('utf-8');
             break;
           } else if (part.mimeType === 'text/html' && part.body.data) {
             body = Buffer.from(part.body.data, 'base64').toString('utf-8');
             break;
-        }  else  body = Buffer.from(part.parts[0].body.data, 'base64').toString('utf-8');
+          } else if (part.parts && part.parts[0] && part.parts[0].body.data) {
+            body = Buffer.from(part.parts[0].body.data, 'base64').toString('utf-8');
+            break;
+          }
+        }
+      } else if (emailData.payload.body.data) {
+        body = Buffer.from(emailData.payload.body.data, 'base64').toString('utf-8');
       }
-    } else if (emailData.payload.body.data) {
-      body = Buffer.from(emailData.payload.body.data, 'base64').toString('utf-8');
+  
+      return {
+        id: emailData.id,
+        threadId: emailData.threadId,
+        labelIds: emailData.labelIds,
+        headers,
+        body,
+      };
+    } catch (error) {
+      console.error('Error reading email:', error);
+      throw error;
     }
-
-    return {
-      id: emailData.id,
-      threadId: emailData.threadId,
-      labelIds: emailData.labelIds,
-      headers,
-      body,
-    };
   }
+  
+  // module.exports = { readEmail };
+  
   
 
   async function getEmailsReceivedLast15Minutes(auth) {
@@ -206,6 +217,7 @@ async function setLabels(auth, messageId, labelsToAdd, labelsToRemove) {
     });
   
     // Extracting message IDs
+    // console.log(res.data.messages);
     const messageIds = res.data.messages.map(message => message.id);
   
     // Fetching detailed information for each message
@@ -220,19 +232,22 @@ async function setLabels(auth, messageId, labelsToAdd, labelsToRemove) {
       const headers = email.data.payload.headers;
       let body = '';
 
-       // Extracting the email body from the payload parts
-    if (emailData.payload.parts) {
-        for (const part of emailData.payload.parts) { 
+
+    // console.log(email)
+
+    if (email.data.payload.parts) {
+        for (const part of email.data.payload.parts) { 
           if (part.mimeType === 'text/plain' && part.body.data) {
               body = Buffer.from(part.body.data, 'base64').toString('utf-8');
               break;
             } else if (part.mimeType === 'text/html' && part.body.data) {
               body = Buffer.from(part.body.data, 'base64').toString('utf-8');
               break;
-          }  else  body = Buffer.from(part.parts[0].body.data, 'base64').toString('utf-8');
+          }  
+          // else  body = Buffer.from(part.parts[0].body.data, 'base64').toString('utf-8');
         }
-      } else if (emailData.payload.body.data) {
-        body = Buffer.from(emailData.payload.body.data, 'base64').toString('utf-8');
+      } else if (email.data.payload.body.data) {
+        body = Buffer.from(email.data.payload.body.data, 'base64').toString('utf-8');
       }
 
   
@@ -255,6 +270,6 @@ module.exports ={
     authorize,
     setLabels,
     sendEmail,
-    listLabels
-
+    listLabels,
+    getEmailsReceivedLast15Minutes
 }
