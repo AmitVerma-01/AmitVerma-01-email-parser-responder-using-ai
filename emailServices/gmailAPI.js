@@ -93,6 +93,29 @@ async function listLabels(auth) {
   });
 }
 
+async function addLabels(auth, labelNames) {
+  const gmail = google.gmail({ version: 'v1', auth });
+
+  const results = [];
+  for (const labelName of labelNames) {
+    const request = {
+      userId: 'me',
+      requestBody : {
+        name : labelName
+      }
+    };
+
+    try {
+      const response = await gmail.users.labels.create(request);
+      results.push(response.data);
+      console.log(`Label created: ${labelName}`);
+    } catch (error) {
+      console.error(`Error creating label "${labelName}":`, error);
+    }
+  }
+
+  return results;
+}
 async function sendEmail(auth , content){
     const gmail = google.gmail({version : 'v1' , auth});
 
@@ -114,21 +137,66 @@ async function sendEmail(auth , content){
 
 }
 
-async function setLabels(auth, messageId, labelsToAdd, labelsToRemove) {
-    const gmail = google.gmail({ version: 'v1', auth });
-  
+async function getLabelId(auth, labelName) {
+  const gmail = google.gmail({ version: 'v1', auth });
+
+  try {
+    const res = await gmail.users.labels.list({
+      userId: 'me',
+    });
+
+    const labels = res.data.labels;
+    const label = labels.find((lbl) => lbl.name === labelName);
+    if (label) {
+      return label.id;
+    } else {
+      throw new Error(`Label "${labelName}" not found`);
+    }
+  } catch (error) {
+    console.error('Error retrieving labels:', error);
+    throw error;
+  }
+}async function setLabels(auth, messageId, labelsToAdd, labelsToRemove = []) {
+  const gmail = google.gmail({ version: 'v1', auth });
+
+  // Convert label names to label IDs
+  const addLabelIds = [];
+  for (const labelName of labelsToAdd) {
+    try {
+      const labelId = await getLabelId(auth, labelName);
+      addLabelIds.push(labelId);
+    } catch (error) {
+      console.error(`Error finding label ID for "${labelName}":`, error);
+    }
+  }
+
+  const removeLabelIds = [];
+  for (const labelName of labelsToRemove) {
+    try {
+      const labelId = await getLabelId(auth, labelName);
+      removeLabelIds.push(labelId);
+    } catch (error) {
+      console.error(`Error finding label ID for "${labelName}":`, error);
+    }
+  }
+
+  try {
     const res = await gmail.users.messages.modify({
       userId: 'me',
       id: messageId,
       requestBody: {
-        addLabelIds: labelsToAdd,
-        removeLabelIds: labelsToRemove,
+        addLabelIds,
+        removeLabelIds,
       },
     });
-  
+
     console.log('Labels updated:', res.data);
     return res.data;
+  } catch (error) {
+    console.error('Error updating labels:', error);
+    throw error;
   }
+}
 
 
 async function getAllEmails(auth) {
@@ -185,8 +253,6 @@ async function getAllEmails(auth) {
   
       return {
         id: emailData.id,
-        threadId: emailData.threadId,
-        labelIds: emailData.labelIds,
         headers,
         body,
       };
@@ -271,5 +337,6 @@ module.exports ={
     setLabels,
     sendEmail,
     listLabels,
-    getEmailsReceivedLast15Minutes
+    getEmailsReceivedLast15Minutes,
+    addLabels
 }

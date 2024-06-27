@@ -24,6 +24,7 @@
     "node-domexception": "^1.0.0",
     "node-fetch": "^2.7.0",
     "openai": "^4.52.1",
+    "prompt-sync": "^4.2.0",
     "tr46": "^0.0.3",
     "undici-types": "^5.26.5",
     "web-streams-polyfill": "^3.3.3",

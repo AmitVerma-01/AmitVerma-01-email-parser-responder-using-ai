@@ -1,5 +1,5 @@
 const { Queue } = require('bullmq')
-const { getAllEmails , authorize, readEmail } = require('../emailServices/gmailAPI')
+const { getAllEmails , authorize, readEmail,  addLabels, getEmailsReceivedLast15Minutes } = require('../emailServices/gmailAPI')
 const emailQueue = new Queue("email-queue",{
     connection : {
         port : 6379,
@@ -23,10 +23,10 @@ function extractEmail(headerValue) {
 let emailsWithDetails = []
 const getEmailsWithDetails = async ( emails ) =>{
     for(let i=0 ;i<emails.length ;i++){
-        let subject,email;
+        {let subject,email;
         let res = await readEmail( auth , emails[i].id )
         const body = res.body;
-        const labels = res.labelIds;
+        const msgId = res.id;
         res.headers.forEach((e) => {
             if(e.name === 'Subject') subject = e.value;
             if(e.name === 'From') email = extractEmail(e.value)
@@ -34,31 +34,37 @@ const getEmailsWithDetails = async ( emails ) =>{
         emailsWithDetails.push({
             email,
             subject,
-            labels,
-            body
-        })
+            body,
+            msgId
+        })}
     }
 }
 
 
-async function addEmails(email,subject,body,labels){
+async function addEmails(email,subject,body,msgId){
     const res = await emailQueue.add("email to the user" , {
         email,
         subject,
         body,
-        labels
+        msgId
     })
     console.log("job is added with id :- ", res.id);
 }
 
 
-const main = async ()=>{
+const producer = async (val)=>{
+    try{
     auth = await authorize();
-    emails = await getAllEmails(auth);
+    emails = val == 2 ? await getAllEmails(auth) : await getEmailsReceivedLast15Minutes(auth) ;
     await getEmailsWithDetails(emails)
-    emailsWithDetails.forEach((email) => {
-        addEmails(email.email, email.subject,email.body, email.labels)
-    })
+    for(const email of emailsWithDetails){
+        if(email.email)
+       await addEmails(email.email, email.subject,email.body, email.msgId)
+    }
+} catch(error){
+    console.error("Error in producer:", error);
 }
-
-main();
+}
+module.exports ={
+    producer
+}

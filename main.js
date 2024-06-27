@@ -1,16 +1,18 @@
-const { getAllEmails, readEmail , authorize, sendEmail, getEmailsReceivedLast15Minutes } = require("./emailServices/gmailAPI");
-const { getLabelFunction, getReplyFunction } = require("./AI-service/geminiAPI");
+const { producer } = require("./bullMQ/producer");
+const { startWorker } = require("./bullMQ/worker");
+// const { authorize } = require("./emailServices/gmailAPI");
+const prompt = require('prompt-sync')();
 
 async function main() {
- 
-    const replyResponse = await sendEmail(auth,
-      `To: ${recipentEmail}\r\n` +
-      `Subject: Re: ${subject}\r\n` +
-      `Content-Type: text/plain; charset=utf-8\r\n` +
-      `\r\n` +
-      `${replyMail}`
-    );
-    
+    const val = prompt("choose one option, Press Enter:- \n 1:- Start service on email which from Now \n 2:- Start service previour email as well \n ")
+    if(val == 2 || val == 1){
+    setTimeout(async () => {
+      await producer(val);
+      await startWorker()
+    },15000);
+  }else{
+    console.log("invalid Input :- ", val)
   }
+}
   
-  main().catch(console.error);
+main().catch(console.error);
