@@ -40,6 +40,9 @@ The Email Parser Using AI is a tool designed to streamline email management by a
 
 4. Download the `credentials.json` file from the Google Cloud Console and place it in the root directory of the project.
 
+5. Ensure you have a Redis server running on port 6379 for BullMQ to work.
+
+
 ## Usage
 
 1. Start the application:
