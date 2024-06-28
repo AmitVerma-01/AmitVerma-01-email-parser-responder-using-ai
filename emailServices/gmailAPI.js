@@ -302,7 +302,7 @@ async function getEmailsReceivedLast15Minutes(auth) {
   if(res.data.resultSizeEstimate === 0){
     return [];
   }
-  console.log('hhhh');
+
   const messageIds = res.data.messages.map(message => message.id);
 
   const emails = [];

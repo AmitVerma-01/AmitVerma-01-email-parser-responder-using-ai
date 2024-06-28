@@ -28,7 +28,7 @@ const producer = async (val)=>{
     auth = await authorize();
     await ensureLabels(auth);
     emails = val == 2 ? await getAllEmails(auth) : await getEmailsReceivedLast15Minutes(auth) ;
-    console.log("pro ");
+    // console.log("pro ");
     const emailsWithDetails = await getEmailsWithDetails(emails)
     if(!emailsWithDetails){
         return 0;

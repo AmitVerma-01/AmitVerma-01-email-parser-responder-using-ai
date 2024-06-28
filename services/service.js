@@ -12,9 +12,9 @@ function extractEmail(headerValue) {
 let emailsWithDetails = []
 const getEmailsWithDetails = async ( emails ) =>{
     const auth = await authorize();
-    console.log("ext1");
+    // console.log("ext1");
     if(emails.length === 0 ) {
-        console.log("extract emails",emails.length);
+        // console.log("extract emails",emails.length);
         return 0;
     }
     for(let i=0 ;i<emails.length ;i++){
