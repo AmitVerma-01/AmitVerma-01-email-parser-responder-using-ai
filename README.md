@@ -10,6 +10,8 @@ The Email Parser Using AI is a tool designed to streamline email management by a
 - Generates and sends replies to emails.
 - Utilizes the Gemini API for AI-driven label and reply generation.
 - Integrates with the Gmail API for email processing.
+- Repeats the email processing every 15 minutes.
+
 
 ## Installation
 
@@ -41,4 +43,9 @@ The Email Parser Using AI is a tool designed to streamline email management by a
     ```
 
 2. The application will begin processing your emails, generating labels, and sending replies automatically.
+## Contact
 
+If you have any questions or need further assistance, feel free to reach out:
+
+- Email: amitverma.dev01@gmail.com
+- GitHub: [AmitVerma-01](https://github.com/AmitVerma-01)
