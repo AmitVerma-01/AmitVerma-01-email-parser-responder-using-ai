@@ -71,26 +71,49 @@ async function authorize() {
   return client;
 }
 
-/**
- * Lists the labels in the user's account.
- *
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
- */
-async function listLabels(auth) {
+const REQUIRED_LABELS = ["INTERESTED", "NOT INTERESTED", "MORE INFORMATION"];
+
+async function ensureLabels(auth) {
   const gmail = google.gmail({ version: 'v1', auth });
 
-  const res = await gmail.users.labels.list({
-    userId: 'me',
-  });
-  const labels = res.data.labels;
-  if (!labels || labels.length === 0) {
-    console.log('No labels found.');
-    return;
+  try {
+    // Fetching existing labels
+    const res = await gmail.users.labels.list({
+      userId: 'me',
+    });
+
+    const existingLabels = res.data.labels.map(label => label.name);
+    const missingLabels = REQUIRED_LABELS.filter(label => !existingLabels.includes(label));
+
+    if (missingLabels.length === 0) {
+      console.log('All required labels are already present.');
+      return;
+    }
+
+    // Add missing labels
+    const results = [];
+    for (const labelName of missingLabels) {
+      const request = {
+        userId: 'me',
+        requestBody: {
+          name: labelName,
+        },
+      };
+
+      try {
+        const response = await gmail.users.labels.create(request);
+        results.push(response.data);
+        console.log(`Label created: ${labelName}`);
+      } catch (error) {
+        console.error(`Error creating label "${labelName}":`, error);
+      }
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Error retrieving labels:', error);
+    throw error;
   }
-  console.log('Labels:');
-  labels.forEach((label) => {
-    console.log(`- ${label.name}`);
-  });
 }
 
 async function addLabels(auth, labelNames) {
@@ -156,7 +179,8 @@ async function getLabelId(auth, labelName) {
     console.error('Error retrieving labels:', error);
     throw error;
   }
-} async function setLabels(auth, messageId, labelsToAdd, labelsToRemove = []) {
+} 
+async function setLabels(auth, messageId, labelsToAdd, labelsToRemove = []) {
   const gmail = google.gmail({ version: 'v1', auth });
 
   // Convert label names to label IDs
@@ -274,12 +298,13 @@ async function getEmailsReceivedLast15Minutes(auth) {
     userId: 'me',
     q: query,
   });
-
-  // Extracting message IDs
-  // console.log(res.data.messages);
+  console.log(res.data.resultSizeEstimate);
+  if(res.data.resultSizeEstimate === 0){
+    return [];
+  }
+  console.log('hhhh');
   const messageIds = res.data.messages.map(message => message.id);
 
-  // Fetching detailed information for each message
   const emails = [];
   for (const messageId of messageIds) {
     const email = await gmail.users.messages.get({
@@ -318,7 +343,7 @@ async function getEmailsReceivedLast15Minutes(auth) {
       body,
     });
   }
-
+  console.log("emails");
   return emails;
 }
 
@@ -329,7 +354,7 @@ module.exports = {
   authorize,
   setLabels,
   sendEmail,
-  listLabels,
   getEmailsReceivedLast15Minutes,
-  addLabels
+  addLabels,
+  ensureLabels
 }
