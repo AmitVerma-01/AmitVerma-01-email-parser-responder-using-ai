@@ -1,6 +1,5 @@
 const { producer } = require("./bullMQ/producer");
 const { startWorker } = require("./bullMQ/worker");
-// const { authorize } = require("./emailServices/gmailAPI");
 const prompt = require('prompt-sync')();
 
 async function main() {
