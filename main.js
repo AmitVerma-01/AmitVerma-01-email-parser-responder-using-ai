@@ -1,26 +1,21 @@
 const { producer } = require("./bullMQ/producer");
 const { startWorker } = require("./bullMQ/worker");
 const prompt = require('prompt-sync')();
-
+const starter = async (val) => {
+  // console.log("setinterval");
+  const verify = await producer(val);
+  if(!verify){
+    console.log("No emails");
+    return;
+  }
+  await startWorker()
+}
 async function main() {
-    const val = prompt("choose one option, Press Enter:- \n 1:- Start service on email which from Now \n 2:- Start service previous email as well \n ")
+    const val = prompt("choose one option, Press Enter:- \n 1:- Start service on emails which recieved in last 15 minutes and onwards \n 2:- Start service on all previous emails \n ")
     if(val == 2 || val == 1){
-      console.log("before producer");
-      const verify = await producer(val);
-      if(!verify){
-        console.log("No emails");
-        return;
-      }
-      console.log("worker start");
-      await startWorker()
+      await  starter(val);
     setInterval(async () => {
-      console.log("setinterval");
-      const verify = await producer(val);
-      if(!verify){
-        console.log("No emails");
-        return;
-      }
-      await startWorker()
+      await starter(val);
     },900000);
   }else{
     console.log("invalid Input :- ", val)
